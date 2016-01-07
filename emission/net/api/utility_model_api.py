@@ -14,7 +14,7 @@ def write_to_db_from_browser(info):
     value_line = value_line.split(";")
     start = value_line[0]
     end = value_line[1]
-    
+
     start = base.geocode_with_cache(start)
     end = base.geocode_with_cache(end)
     
@@ -34,13 +34,24 @@ def write_to_db_from_browser(info):
 
     bike = get_bike_info(value_line[4])
 
+    user = UserModel("scottMoura", bike)
+    user.increase_utility_by_n("time", int(value_line[5]))
+    user.increase_utility_by_n("sweat", int(value_line[6]))
+    user.increase_utility_by_n("scenery", int(value_line[7]))
+    user.increase_utility_by_n("social", int(value_line[8]))
+
     time = int(value_line[5])
     sweat = int(value_line[6])
     scenery = int(value_line[7])
     social = int(value_line[8])
 
-    db.insert({"pushing" : False, "at" : at, "time" : time_info, "beauty" : scenery, "social" : social, "sweat" : sweat, "start" : start, "end" : end, "bike" : bike})
+    trips = user.get_top_choices_lat_lng(info["start"], info["end"], info["time_info"]["when"])
 
+    for t in trips:
+        ts += (str(t.make_for_browser()))
+        ts += ";"
+
+    return json.dumps({"value" : ts})
 
 def get_bike_info(bike_str):
     if bike_str == "walk":

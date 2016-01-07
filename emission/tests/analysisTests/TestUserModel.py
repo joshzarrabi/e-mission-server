@@ -63,15 +63,6 @@ class UserModelTests(unittest.TestCase):
         self.assertFalse(new_choices == choices)
 
 
-    def testNormalizationScores(self):
-        bs = eum.parse_beauty()
-        normal = eum.normalize_scores(bs)
-        
-        tot = 0
-        for area in normal:
-             tot += area.beauty
-        print normal
-        self.assertEqual(tot, 1)
 
     def testNormalizationTimes(self):
         start = (37.870637,-122.259722)

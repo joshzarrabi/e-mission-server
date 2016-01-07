@@ -42,7 +42,7 @@ def obtain_alternatives(trip_id, user_id):
                     mode = otp_to_google_mode[mode]
                     gmaps = gmaps_lib.googlemaps.GoogleMaps('AIzaSyBEkw4PXVv_bsAdUmrFwatEyS6xLw3Bd9c')
                     result = gmaps.directions(origin=start_coord, destination=end_coord, mode=mode)
-                    gmaps_trip = gmaps_lib.common.google_maps_to_our_trip(result, None, user_id, trip_id, mode, curr_time)
+                    gmaps_trip[0] = gmaps_lib.common.google_maps_to_our_trip(result, None, user_id, trip_id, mode, curr_time)
                     gmaps_trip.save_to_db()
 
         '''

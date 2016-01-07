@@ -20,6 +20,7 @@ CENTER_OF_CAMPUS = to.Coordinate(37.871790, -122.260005)
 RANDOM_RADIUS = .3  # 300 meters around center of campus; for randomization
 N_TOP_TRIPS = 3 # Number of top trips we return for the user to look at
 
+
 class UserBase:
 
     """ 
@@ -55,6 +56,10 @@ class UserBase:
             self.geocode_cache[place] = coded
             return coded
 
+
+the_base = UserBase()
+
+
 class CampusTrip:
 
     def __init__(self, score_list, time_duration, points, source):
@@ -77,14 +82,14 @@ class CampusTrip:
         return to_return
 
 
-    def make_thing_for_isabel(self):
+    def make_for_browser(self):
         return '%s;%s;%s;%s;%s;%s' % (self.beauty, self.time, self.social, self.sweat, self.time_duration, self.make_points())
 
     def make_jsn(self):
         return json.dumps({"time" : self.time, "beauty" : self.beauty, "social" : self.social, "sweat" : self.sweat, "duration" : self.time_duration, "points" : self.points})
         
     def make_json(self):
-        return json.dumps(self.make_thing_for_isabel())
+        return json.dumps(self.make_for_browser())
 
     def __repr__(self):
         return "total score : %f || source : %s || beauty : %f || sweat : %f || time : %f || social : %f" % (self.tot_score, self.source, self.beauty, self.sweat, self.time, self.social)
@@ -100,13 +105,13 @@ class UserModel:
     Can do lots of cool things
     """ 
 
-    def __init__(self, name, user_base, has_bike=False):
+    def __init__(self, name, has_bike=False):
         self.name = name
         self.utilities = emmc.Counter()
         self.has_bike = has_bike
-        self.user_base = user_base
+        self.user_base = the_base
 
-        user_base.add_user(self)
+        self.user_base.add_user(self)
 
         ## Initialize utilities
         self.utilities["sweat"] = 0
@@ -369,27 +374,6 @@ def get_closest(time, area):
             return v
     return 0
 
-def normalize_scores(areas):
-    counter = emmc.Counter()
-    #print "len of areas is %s" % len(areas)
-    for area in areas:
-        if area.beauty:
-            counter[area.name] = area.beauty
-        elif area.noise:
-            counter[area.name] = area.noise
-    counter.normalize()
-    
-    new_areas = [ ]
-    for name, value in counter.iteritems():
-        for area in areas:
-            if area.name == name:
-                if area.beauty:
-                    new_area = Area(name, area.bounding_box[0], area.bounding_box[1], beauty=value)
-                elif area.noise:
-                    new_area = Area(name, area.bounding_box[0], area.bounding_box[1], noise=value)
-                new_areas.append(new_area)
-
-    return new_areas
  
 def get_beauty_score(lat, lng, beauties):
     tot = 0
@@ -446,7 +430,7 @@ def write_time(hour, minute):
 
 def make_random_user(base):
     name = str(random.random())
-    user = UserModel(name, base)
+    user = UserModel(name)
     utilites = ("sweat", "scenery", "social", "time", "noise", "crowded")
     for u in utilites:
         new_utility = random.randint(1, 101)
@@ -509,7 +493,7 @@ def loop(base):
     for t in trips:
         print t.sweat
         #print t
-        ts += (str(t.make_thing_for_isabel()))
+        ts += (str(t.make_for_browser()))
         ts += ";"
 
     payload = [{"value" : str(ts), "at" : at}]
@@ -544,7 +528,7 @@ def main():
         #print "here"
         #loop(base)
         try:
-            loop(base)
+            loop_mongo(base)
             time.sleep(.5)
         except Exception as e:
             print e
@@ -578,7 +562,7 @@ def make_user_from_jsn(jsn, base):
 
 
     bike = get_bike_info(value_line[4])
-    user = UserModel("scottMoura", base, bike)
+    user = UserModel("scottMoura", bike)
     user.increase_utility_by_n("time", int(value_line[5]))
     user.increase_utility_by_n("sweat", int(value_line[6]))
     user.increase_utility_by_n("scenery", int(value_line[7]))
@@ -589,12 +573,12 @@ def make_user_from_jsn(jsn, base):
 
     return {"user" : user, "start" : start, "end" : end, "time_info" : time_info}
 
-def user_from_mongo(base):
+def user_from_mongo():
     db = edb.get_utility_model_db()
     record = db.find({"pushing" : False}).sort({"at" : -1}).limit(1)
     bike = record["bike"]
 
-    user = UserModel("person", base, bike)
+    user = UserModel("person", bike)
     user.increase_utility_by_n("time", record["time"])
     user.increase_utility_by_n("sweat", record["sweat"])
     user.increase_utility_by_n("scenery", record["scenery"])
