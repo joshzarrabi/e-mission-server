@@ -3,11 +3,6 @@ import emission.core.get_database as edb
 
 import json
 
-def get_json_to_upload_to_browser():
-    db = edb.get_utility_model_db()
-    record = db.find({"pushing" : True}).sort({"at" : -1}).limit(1)
-    return json.dumps(record)
-
 def write_to_db_from_browser(info):
     db = edb.get_utility_model_db()
     at = int((datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(0)).total_seconds())
